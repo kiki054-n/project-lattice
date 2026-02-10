@@ -50,7 +50,7 @@ Web3技術を用いて物理的に「平和と共生」を実装するための�
 🚀 はじめかた (Getting Started)
 1. 開発環境のセットアップ
 Bash
-git clone https://github.com/shiojiri-lattice/project-lattice.git
+git clone https://github.com/kiki054-n/project-lattice.git
 cd project-lattice
 npm install
 
