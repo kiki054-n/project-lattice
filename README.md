@@ -1,5 +1,6 @@
 # project-lattice
-地球平和宣言（テトラハーモニー宣言）「4極複素平面モデル」を世界に実装
+地球平和宣言（テトラハーモニー宣言）
+「4極複素平面モデル」を世界に実装
 
 Project Lattice: The Geometry of Peace
 
