@@ -53,6 +53,7 @@ Bash
 git clone https://github.com/shiojiri-lattice/project-lattice.git
 cd project-lattice
 npm install
+
 2. シミュレーターの起動
 あなたの地域の予算データ（ダミー可）を4極にマッピングし、結晶の歪みをチェックします。
 
