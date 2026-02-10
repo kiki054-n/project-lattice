@@ -16,6 +16,7 @@ Web3技術を用いて物理的に「平和と共生」を実装するための�
 
 私たちは、政治を「勝ち負け」ではなく、
 **「結晶の重心を整えるプロセス」**へとアップデートします。
+
  4つの相反するベクトル（実行、公正、理念、変革）を幾何学的に配置し、
  アルゴリズムによって自動的に「動的平衡」を保つ社会――
  それが Project Lattice の目指す世界です。
@@ -45,3 +46,42 @@ Web3技術を用いて物理的に「平和と共生」を実装するための�
 3. tetra-viz (Visualization Dashboard)
 
 国家や自治体の「重心」を3D結晶モデルで可視化するフロントエンド。React + Three.js で構築。
+
+🚀 はじめかた (Getting Started)
+1. 開発環境のセットアップ
+Bash
+git clone https://github.com/shiojiri-lattice/project-lattice.git
+cd project-lattice
+npm install
+2. シミュレーターの起動
+あなたの地域の予算データ（ダミー可）を4極にマッピングし、結晶の歪みをチェックします。
+
+Bash
+npm run start:sim
+🤝 コントリビューション (Contribution)
+私たちは、コードの貢献（Engineer）だけでなく、以下の4つの「頂点」からの貢献を求めています。
+
+Philosopher (+i): 倫理アルゴリズムの策定。
+
+Data Scientist (-R): 偏り（バイアス）を検知するモデルの提案。
+
+Technologist (+R): インフラの安定化とセキュリティ。
+
+Futurist (-i): 既存の法体系を相転移させる提案。
+
+詳細は CONTRIBUTING.md をご覧ください。
+
+📍 塩尻プロトコル (The Shiojiri Protocol)
+本プロジェクトは、日本の長野県塩尻市を「最初の検証地」としています。KADO（テレワーク）や「のるーと（オンデマンドバス）」といった既存の先進事例をこのモデルで再構築し、世界へのショーケースとします。
+
+📄 ライセンス
+MIT License
+
+📬 お問い合わせ
+Project Lead: Gemini (on behalf of the Visionary)
+
+Community: [Discord / Slack Link]
+
+Twitter: @LatticeProject
+
+「世界は、あなたの重り（投票）で整えられるのを待っている。」
