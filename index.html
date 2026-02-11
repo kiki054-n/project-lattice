@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal Harmony - 四極調和シミュレーター</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; background: #050a0f; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
+        .panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; pointer-events: auto; }
+        input[type=range] { width: 100%; height: 6px; background: #334155; border-radius: 5px; outline: none; -webkit-appearance: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #60a5fa; border-radius: 50%; cursor: pointer; border: 2px solid white; }
+        .label-group { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.85rem; }
+        .metric-value { font-weight: bold; color: #60a5fa; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-top: 10px; }
+        .status-stable { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+        .status-unstable { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+        
+        /* AI Panel styles */
+        #ai-panel { max-height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+        .ai-loading { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div class="ui-overlay">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div class="panel max-w-md">
+            <h1 class="text-xl font-bold mb-2 text-blue-300">Crystal Harmony System</h1>
+            <p class="text-sm text-slate-400">正四面体モデルによる社会均衡シミュレーション。AIが結晶の歪みを分析します。</p>
+            <div id="stability-badge" class="status-badge status-stable">構造：動的平衡</div>
+        </div>
+        
+        <div class="panel text-right min-w-[200px]">
+            <div class="text-xs uppercase text-slate-500 mb-1">複素数GDP (C-GDP)</div>
+            <div id="c-gdp-display" class="text-2xl font-mono text-blue-400">0.00 + 0.00i</div>
+            <button id="ai-analyze-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-all pointer-events-auto flex items-center justify-center gap-2">
+                <span>✨ AI社会診断を実行</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Output Center (Hidden initially) -->
+    <div id="ai-response-container" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl pointer-events-none">
+        <div class="panel shadow-2xl border-blue-500/30">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-blue-300 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    AI 結晶構造解析レポート
+                </h3>
+                <button onclick="closeAI()" class="text-slate-500 hover:text-white pointer-events-auto text-xl">&times;</button>
+            </div>
+            <div id="ai-panel" class="text-sm leading-relaxed text-slate-200 pointer-events-auto pr-2">
+                <!-- AI Response will appear here -->
+                分析中...
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex justify-center gap-6 mb-4">
+        <div class="panel w-80">
+            <h2 class="text-sm font-bold mb-4 border-b border-slate-700 pb-2 text-emerald-400">実数軸 (Real Axis)</h2>
+            
+            <div class="mb-4">
+                <div class="label-group">
+                    <span>Engineer (+R) - 実装・経済</span>
+                    <span id="val-r-plus" class="metric-value">0.7</span>
+                </div>
+                <input type="range" id="slider-r-plus" min="0.1" max="1.5" step="0.01" value="0.7">
+            </div>
+
+            <div class="mb-2">
+                <div class="label-group">
+                    <span>Data Scientist (-R) - 公平・監査</span>
+                    <span id="val-r-minus" class="metric-value">0.7</span>
+                </div>
+                <input type="range" id="slider-r-minus" min="0.1" max="1.5" step="0.01" value="0.7">
+            </div>
+        </div>
+
+        <div class="panel w-80">
+            <h2 class="text-sm font-bold mb-4 border-b border-slate-700 pb-2 text-purple-400">虚数軸 (Imaginary Axis)</h2>
+            
+            <div class="mb-4">
+                <div class="label-group">
+                    <span>Philosopher (+i) - 倫理・精神</span>
+                    <span id="val-i-plus" class="metric-value">0.7</span>
+                </div>
+                <input type="range" id="slider-i-plus" min="0.1" max="1.5" step="0.01" value="0.7">
+            </div>
+
+            <div class="mb-2">
+                <div class="label-group">
+                    <span>Futurist (-i) - 変革・法体系</span>
+                    <span id="val-i-minus" class="metric-value">0.7</span>
+                </div>
+                <input type="range" id="slider-i-minus" min="0.1" max="1.5" step="0.01" value="0.7">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const apiKey = ""; // Runtime provides the key
+    let scene, camera, renderer, crystal, wireframe, particles;
+    const container = document.getElementById('canvas-container');
+
+    const params = {
+        rPlus: 0.7,
+        rMinus: 0.7,
+        iPlus: 0.7,
+        iMinus: 0.7
+    };
+
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0x60a5fa, 2);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        const geometry = new THREE.BufferGeometry();
+        crystal = new THREE.Mesh(
+            geometry,
+            new THREE.MeshPhongMaterial({
+                color: 0x60a5fa,
+                transparent: true,
+                opacity: 0.6,
+                shininess: 100,
+                side: THREE.DoubleSide,
+                flatShading: true
+            })
+        );
+        
+        updateGeometry();
+        
+        const edges = new THREE.EdgesGeometry(crystal.geometry);
+        wireframe = new THREE.LineSegments(
+            edges,
+            new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 })
+        );
+
+        scene.add(crystal);
+        scene.add(wireframe);
+
+        const pCount = 200;
+        const pGeometry = new THREE.BufferGeometry();
+        const pCoords = new Float32Array(pCount * 3);
+        for(let i=0; i<pCount*3; i++) pCoords[i] = (Math.random() - 0.5) * 10;
+        pGeometry.setAttribute('position', new THREE.BufferAttribute(pCoords, 3));
+        particles = new THREE.Points(pGeometry, new THREE.PointsMaterial({ color: 0x334155, size: 0.05 }));
+        scene.add(particles);
+
+        animate();
+    }
+
+    function updateGeometry() {
+        const v0 = [0, params.iPlus, 0];                                   
+        const v1 = [-params.rMinus * 0.866, -params.iPlus * 0.5, params.iMinus * 0.5]; 
+        const v2 = [params.rPlus * 0.866, -params.iPlus * 0.5, params.iMinus * 0.5];  
+        const v3 = [0, -params.iPlus * 0.5, -params.iMinus];               
+
+        const indices = [
+            ...v0, ...v1, ...v2, 
+            ...v0, ...v2, ...v3, 
+            ...v0, ...v3, ...v1, 
+            ...v1, ...v3, ...v2  
+        ];
+
+        const vertices = new Float32Array(indices);
+        crystal.geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        crystal.geometry.computeVertexNormals();
+        
+        if (wireframe) {
+            wireframe.geometry.dispose();
+            wireframe.geometry = new THREE.EdgesGeometry(crystal.geometry);
+        }
+
+        updateCalculations();
+    }
+
+    function updateCalculations() {
+        const realPart = (params.rPlus - params.rMinus).toFixed(2);
+        const imagPart = (params.iPlus - params.iMinus).toFixed(2);
+        const sign = imagPart >= 0 ? "+" : "";
+        document.getElementById('c-gdp-display').innerText = `${realPart} ${sign} ${imagPart}i`;
+
+        const variance = Math.abs(params.rPlus - params.rMinus) + Math.abs(params.iPlus - params.iMinus);
+        const badge = document.getElementById('stability-badge');
+        if (variance < 0.4) {
+            badge.innerText = "構造：動的平衡（安定）";
+            badge.className = "status-badge status-stable";
+            crystal.material.color.setHex(0x60a5fa);
+        } else {
+            badge.innerText = "構造：歪み検知（不安定）";
+            badge.className = "status-badge status-unstable";
+            crystal.material.color.setHex(0xf87171);
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (crystal) crystal.rotation.y += 0.005;
+        if (wireframe) wireframe.rotation.y += 0.005;
+        if (particles) particles.rotation.y -= 0.001;
+        renderer.render(scene, camera);
+    }
+
+    // AI Analysis Integration
+    async function callGemini(prompt) {
+        let retries = 0;
+        const maxRetries = 5;
+        
+        while (retries < maxRetries) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: "あなたは幾何学と社会思想を専門とするAIコンサルタントです。正四面体の4つの頂点（実数・虚数軸）のパラメータを受け取り、社会の現状を分析し、調和を取り戻すための哲学的・実務的なアドバイスを提供してください。日本語で、理知的かつインスピレーションを与える口調で回答してください。" }] }
+                    })
+                });
+
+                if (!response.ok) throw new Error('API Error');
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text;
+            } catch (error) {
+                retries++;
+                const delay = Math.pow(2, retries) * 500;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        return "通信エラーが発生しました。時間を置いて再度お試しください。";
+    }
+
+    async function performAIAnalysis() {
+        const btn = document.getElementById('ai-analyze-btn');
+        const aiContainer = document.getElementById('ai-response-container');
+        const aiPanel = document.getElementById('ai-panel');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="ai-loading">思考中...</span>';
+        aiContainer.classList.remove('hidden');
+        aiPanel.innerHTML = '<div class="ai-loading">幾何学的データを解析し、社会の重心を計算しています...</div>';
+
+        // 結晶を光らせる演出
+        crystal.material.emissive = new THREE.Color(0x60a5fa);
+        crystal.material.emissiveIntensity = 0.5;
+
+        const prompt = `
+            現在の社会パラメータ:
+            - 実数軸プラス (Engineer/実装): ${params.rPlus}
+            - 実数軸マイナス (Data Scientist/公平): ${params.rMinus}
+            - 虚数軸プラス (Philosopher/倫理): ${params.iPlus}
+            - 虚数軸マイナス (Futurist/変革): ${params.iMinus}
+            
+            これらの数値から、社会の「結晶の形状」を診断してください。
+            特に、歪みがある場合はどの軸が不足しているか、あるいは過剰かを指摘し、改善のための具体的な行動指針を提案してください。
+        `;
+
+        const result = await callGemini(prompt);
+        
+        aiPanel.innerHTML = result.replace(/\n/g, '<br>');
+        btn.disabled = false;
+        btn.innerHTML = '<span>✨ AI社会診断を実行</span>';
+        
+        // 演出終了
+        crystal.material.emissiveIntensity = 0;
+    }
+
+    function closeAI() {
+        document.getElementById('ai-response-container').classList.add('hidden');
+    }
+
+    // UI Events
+    const sliders = {
+        'r-plus': 'rPlus',
+        'r-minus': 'rMinus',
+        'i-plus': 'iPlus',
+        'i-minus': 'iMinus'
+    };
+
+    Object.entries(sliders).forEach(([id, param]) => {
+        const slider = document.getElementById(`slider-${id}`);
+        const display = document.getElementById(`val-${id}`);
+        slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            params[param] = val;
+            display.innerText = val.toFixed(2);
+            updateGeometry();
+        });
+    });
+
+    document.getElementById('ai-analyze-btn').addEventListener('click', performAIAnalysis);
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    init();
+</script>
+
+</body>
+</html>
